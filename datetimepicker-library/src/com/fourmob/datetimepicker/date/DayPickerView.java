@@ -72,15 +72,15 @@ public class DayPickerView extends ListView implements AbsListView.OnScrollListe
         return firstPosition + mostVisibleIndex;
 	}
 
-	public boolean goTo(SimpleMonthAdapter.CalendarDay day, boolean animate, boolean setSelected, boolean forceScroll) {
-        // Set the selected day
-        if (setSelected) {
-            mSelectedDay.set(day);
-        }
+	public boolean goTo(SimpleMonthAdapter.CalendarDay calendarDay, boolean animate, boolean selectDay, boolean forceScroll) {
+		if (selectDay) {
+			this.mSelectedDay.set(calendarDay);
+			this.mAdapter.setSelectedDay(this.mSelectedDay);
+		}
 
-        mTempDay.set(day);
-        final int position = (day.year - mController.getMinYear())
-                * SimpleMonthAdapter.MONTHS_IN_YEAR + day.month;
+		this.mTempDay.set(calendarDay);
+		int position = SimpleMonthAdapter.MONTHS_IN_YEAR * (calendarDay.year - this.mController.getMinYear()) - this.mController.getStartMonth() + calendarDay.month;
+		postSetSelection(position);
 
         View child;
         int i = 0;
@@ -102,10 +102,6 @@ public class DayPickerView extends ListView implements AbsListView.OnScrollListe
             selectedPosition = 0;
         }
 
-        if (setSelected) {
-            mAdapter.setSelectedDay(mSelectedDay);
-        }
-
         // Check if the selected day is now outside of our visible range
         // and if so scroll to the month that contains it
         if (position != selectedPosition || forceScroll) {
@@ -117,7 +113,7 @@ public class DayPickerView extends ListView implements AbsListView.OnScrollListe
             } else {
                 postSetSelection(position);
             }
-        } else if (setSelected) {
+        } else if (selectDay) {
             setMonthDisplayed(mSelectedDay);
         }
         return false;

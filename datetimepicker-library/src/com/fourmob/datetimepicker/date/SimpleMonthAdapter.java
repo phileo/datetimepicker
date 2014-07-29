@@ -1,6 +1,7 @@
 package com.fourmob.datetimepicker.date;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
@@ -32,7 +33,9 @@ public class SimpleMonthAdapter extends BaseAdapter implements SimpleMonthView.O
 	}
 
 	public int getCount() {
-        return ((mController.getMaxYear() - mController.getMinYear()) + 1) * MONTHS_IN_YEAR;
+
+		return MONTHS_IN_YEAR * (this.mController.getMaxYear() - this.mController.getMinYear())
+				+ this.mController.getEndMonth() - this.mController.getStartMonth() + 1;
 	}
 
 	public Object getItem(int position) {
@@ -55,28 +58,35 @@ public class SimpleMonthAdapter extends BaseAdapter implements SimpleMonthView.O
 			v.setClickable(true);
 			v.setOnDayClickListener(this);
 		}
+
         if (drawingParams == null) {
             drawingParams = new HashMap<String, Integer>();
         }
         drawingParams.clear();
-
-        final int month = position % MONTHS_IN_YEAR;
-        final int year = position / MONTHS_IN_YEAR + mController.getMinYear();
-
+        
+		final int month = (position + this.mController.getStartMonth()) % 12;
+        final int year = (position + this.mController.getStartMonth()) / 12 + this.mController.getMinYear();
+		Log.d("SimpleMonthAdapter", "Year: " + year + ", Month: " + month);
         int selectedDay = -1;
         if (isSelectedDayInMonth(year, month)) {
             selectedDay = mSelectedDay.day;
         }
-
+		int startDay = -1;
+		int endDay = 31;
+		if (this.mController.getStartMonth() == month && this.mController.getMinYear() == year)
+			startDay = this.mController.getStartDay();
+		if (this.mController.getEndMonth() == month && this.mController.getMaxYear() == year)
+			endDay = this.mController.getEndDay();
 		v.reuse();
-
+        
         drawingParams.put(SimpleMonthView.VIEW_PARAMS_SELECTED_DAY, selectedDay);
         drawingParams.put(SimpleMonthView.VIEW_PARAMS_YEAR, year);
         drawingParams.put(SimpleMonthView.VIEW_PARAMS_MONTH, month);
         drawingParams.put(SimpleMonthView.VIEW_PARAMS_WEEK_START, mController.getFirstDayOfWeek());
+		drawingParams.put("start_day", Integer.valueOf(startDay));
+		drawingParams.put("end_day", Integer.valueOf(endDay));
 		v.setMonthParams(drawingParams);
 		v.invalidate();
-
 		return v;
 	}
 

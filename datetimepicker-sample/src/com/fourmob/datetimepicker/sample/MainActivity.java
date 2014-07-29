@@ -34,8 +34,13 @@ public class MainActivity extends FragmentActivity implements OnDateSetListener,
             @Override
             public void onClick(View v) {
                 datePickerDialog.setVibrate(isVibrate());
-                datePickerDialog.setYearRange(1985, 2028);
+                datePickerDialog.setYearRange(2013, 2028);
                 datePickerDialog.setCloseOnSingleTapDay(isCloseOnSingleTapDay());
+
+                // Alternatively, you can set the date range of the Date Picker
+                //datePickerDialog.setDateRange(startYear, startMonth, startDay, endYear, endMonth, endDay);
+                datePickerDialog.setDateRange(2013, 0, 01, 2020, 11, 31);
+
                 datePickerDialog.show(getSupportFragmentManager(), DATEPICKER_TAG);
             }
         });
@@ -45,6 +50,8 @@ public class MainActivity extends FragmentActivity implements OnDateSetListener,
             public void onClick(View v) {
                 timePickerDialog.setVibrate(isVibrate());
                 timePickerDialog.setCloseOnSingleTapMinute(isCloseOnSingleTapMinute());
+                // Default is to allow every minute to be selected.
+                timePickerDialog.setMinutesInterval(5);
                 timePickerDialog.show(getSupportFragmentManager(), TIMEPICKER_TAG);
             }
         });

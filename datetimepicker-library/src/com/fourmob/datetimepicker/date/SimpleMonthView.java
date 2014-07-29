@@ -44,65 +44,67 @@ public class SimpleMonthView extends View {
 	protected static int MONTH_LABEL_TEXT_SIZE;
 
 	protected static float mScale = 0.0F;
-    protected int mPadding = 0;
 
     private String mDayOfWeekTypeface;
     private String mMonthTitleTypeface;
-
-    protected Paint mMonthDayLabelPaint;
-    protected Paint mMonthNumPaint;
-    protected Paint mMonthTitleBGPaint;
-    protected Paint mMonthTitlePaint;
-    protected Paint mSelectedCirclePaint;
     protected int mDayTextColor;
-    protected int mMonthTitleBGColor;
-    protected int mMonthTitleColor;
-    protected int mTodayNumberColor;
-
-    private final StringBuilder mStringBuilder;
     private final Formatter mFormatter;
 
     protected int mFirstJulianDay = -1;
     protected int mFirstMonth = -1;
     protected int mLastMonth = -1;
     protected boolean mHasToday = false;
-    protected int mSelectedDay = -1;
-    protected int mToday = -1;
-    protected int mWeekStart = 1;
-    protected int mNumDays = 7;
-    protected int mNumCells = mNumDays;
-    protected int mSelectedLeft = -1;
-    protected int mSelectedRight = -1;
     private int mDayOfWeekStart = 0;
-    protected int mMonth;
-    protected int mRowHeight = DEFAULT_HEIGHT;
-    protected int mWidth;
-    protected int mYear;
 
 	private final Calendar mCalendar;
 	private final Calendar mDayLabelCalendar;
 
     private int mNumRows = DEFAULT_NUM_ROWS;
 
+
+	protected int mMonth;
+	protected Paint mMonthDayLabelPaint;
+	protected Paint mMonthNumPaint;
+	protected int mMonthTitleBGColor;
+	protected Paint mMonthTitleBGPaint;
+	protected int mMonthTitleColor;
+	protected Paint mMonthTitlePaint;
+	protected int mNumCells = this.mNumDays;
+	protected int mNumDays = 7;
+	private OnDayClickListener mOnDayClickListener;
+	protected int mPadding = 0;
+	protected int mRowHeight = DEFAULT_HEIGHT;
+	protected Paint mSelectedCirclePaint;
+	protected int mSelectedDay = -1;
+	protected int mSelectedLeft = -1;
+	protected int mSelectedRight = -1;
+	private final StringBuilder mStringBuilder;
+	protected int mToday = -1;
+	protected int mTodayNumberColor;
+	protected int mWeekStart = 1;
+	protected int mWidth;
+	protected int mYear;
+	protected int mDayDisabledTextColor;
+	protected int mStartDay;
+	protected int mEndDay;
 	private DateFormatSymbols mDateFormatSymbols = new DateFormatSymbols();
 
-    private OnDayClickListener mOnDayClickListener;
 
 	public SimpleMonthView(Context context) {
 		super(context);
 		Resources resources = context.getResources();
-		mDayLabelCalendar = Calendar.getInstance();
-		mCalendar = Calendar.getInstance();
 
-		mDayOfWeekTypeface = resources.getString(R.string.day_of_week_label_typeface);
-		mMonthTitleTypeface = resources.getString(R.string.sans_serif);
-		mDayTextColor = resources.getColor(R.color.date_picker_text_normal);
-		mTodayNumberColor = resources.getColor(R.color.blue);
-		mMonthTitleColor = resources.getColor(R.color.white);
-		mMonthTitleBGColor = resources.getColor(R.color.circle_background);
-
-		mStringBuilder = new StringBuilder(50);
-		mFormatter = new Formatter(mStringBuilder, Locale.getDefault());
+		this.mDayLabelCalendar = Calendar.getInstance();
+		this.mCalendar = Calendar.getInstance();
+		this.mDayOfWeekTypeface = resources.getString(R.string.day_of_week_label_typeface);
+		this.mMonthTitleTypeface = resources.getString(R.string.sans_serif);
+		this.mDayTextColor = resources.getColor(R.color.date_picker_text_normal);
+		this.mDayDisabledTextColor = resources.getColor(R.color.date_picker_text_disabled);
+		this.mTodayNumberColor = resources.getColor(R.color.blue);
+		this.mMonthTitleColor = resources.getColor(R.color.white);
+		this.mMonthTitleBGColor = resources.getColor(R.color.circle_background);
+		this.mStringBuilder = new StringBuilder(50);
+		this.mFormatter = new Formatter(this.mStringBuilder, Locale.getDefault());
 
 		MINI_DAY_NUMBER_TEXT_SIZE = resources.getDimensionPixelSize(R.dimen.day_number_size);
 		MONTH_LABEL_TEXT_SIZE = resources.getDimensionPixelSize(R.dimen.month_label_size);
@@ -168,18 +170,18 @@ public class SimpleMonthView extends View {
 		int dayOffset = findDayOffset();
 		int day = 1;
 
-		while (day <= mNumCells) {
-			int x = paddingDay * (1 + dayOffset * 2) + mPadding;
-			if (mSelectedDay == day) {
-				canvas.drawCircle(x, y - MINI_DAY_NUMBER_TEXT_SIZE / 3, DAY_SELECTED_CIRCLE_SIZE, mSelectedCirclePaint);
-            }
-            if (mHasToday && (mToday == day)) {
-				mMonthNumPaint.setColor(mTodayNumberColor);
-            } else {
-				mMonthNumPaint.setColor(mDayTextColor);
-            }
+		while (day <= this.mNumCells) {
+			int x = paddingDay * (1 + dayOffset * 2) + this.mPadding;
+			if (this.mSelectedDay == day)
+				canvas.drawCircle(x, y - MINI_DAY_NUMBER_TEXT_SIZE / 3, DAY_SELECTED_CIRCLE_SIZE, this.mSelectedCirclePaint);
 
-			canvas.drawText(String.format("%d", day), x, y, mMonthNumPaint);
+			if ((this.mHasToday) && (this.mToday == day))
+				this.mMonthNumPaint.setColor(this.mTodayNumberColor);
+			else if (day < this.mStartDay || day > this.mEndDay)
+				this.mMonthNumPaint.setColor(this.mDayDisabledTextColor);
+			else
+				this.mMonthNumPaint.setColor(this.mDayTextColor);
+			canvas.drawText(String.format("%d", day), x, y, this.mMonthNumPaint);
 
 			dayOffset++;
 			if (dayOffset == mNumDays) {
@@ -196,10 +198,13 @@ public class SimpleMonthView extends View {
 			return null;
 		}
 
-		int yDay = (int) (y - MONTH_HEADER_SIZE) / mRowHeight;
-		int day = 1 + ((int) ((x - padding) * mNumDays / (mWidth - padding - mPadding)) - findDayOffset()) + yDay * mNumDays;
 
-		return new SimpleMonthAdapter.CalendarDay(mYear, mMonth, day);
+		int yDay = (int) (y - MONTH_HEADER_SIZE) / this.mRowHeight;
+		int day = 1 + ((int) ((x - padding) * this.mNumDays / (this.mWidth - padding - this.mPadding)) - findDayOffset()) + yDay * this.mNumDays;
+		// If day out of range
+		if (day < this.mStartDay || day > this.mEndDay)
+			return null;
+		return new SimpleMonthAdapter.CalendarDay(this.mYear, this.mMonth, day);
 	}
 
 	protected void initView() {
@@ -273,51 +278,47 @@ public class SimpleMonthView extends View {
 		requestLayout();
 	}
 
-	public void setMonthParams(HashMap<String, Integer> params) {
-        if (!params.containsKey(VIEW_PARAMS_MONTH) && !params.containsKey(VIEW_PARAMS_YEAR)) {
-            throw new InvalidParameterException("You must specify month and year for this view");
-        }
-		setTag(params);
 
-        if (params.containsKey(VIEW_PARAMS_HEIGHT)) {
-            mRowHeight = params.get(VIEW_PARAMS_HEIGHT);
-            if (mRowHeight < MIN_HEIGHT) {
-                mRowHeight = MIN_HEIGHT;
+	public void setMonthParams(HashMap<String, Integer> monthParams) {
+		if ((!monthParams.containsKey(VIEW_PARAMS_MONTH)) && (!monthParams.containsKey(VIEW_PARAMS_YEAR)))
+			throw new InvalidParameterException("You must specify the month and year for this view");
+		setTag(monthParams);
+		if (monthParams.containsKey(VIEW_PARAMS_HEIGHT)) {
+			this.mRowHeight = ((Integer) monthParams.get(VIEW_PARAMS_HEIGHT)).intValue();
+			if (this.mRowHeight < MIN_HEIGHT) {
+				this.mRowHeight = MIN_HEIGHT;
             }
+		}
+		if (monthParams.containsKey(VIEW_PARAMS_SELECTED_DAY)) {
+			this.mSelectedDay = ((Integer) monthParams.get(VIEW_PARAMS_SELECTED_DAY)).intValue();
         }
-        if (params.containsKey(VIEW_PARAMS_SELECTED_DAY)) {
-            mSelectedDay = params.get(VIEW_PARAMS_SELECTED_DAY);
-        }
+		this.mMonth = ((Integer) monthParams.get("month")).intValue();
+		this.mYear = ((Integer) monthParams.get("year")).intValue();
+		this.mStartDay = ((Integer) monthParams.get("start_day")).intValue();
+		this.mEndDay = ((Integer) monthParams.get("end_day")).intValue();
+		Time today = new Time(Time.getCurrentTimezone());
+		today.setToNow();
+		this.mHasToday = false;
+		this.mToday = -1;
+		this.mCalendar.set(Calendar.MONTH, this.mMonth);
+		this.mCalendar.set(Calendar.YEAR, this.mYear);
+		this.mCalendar.set(Calendar.DAY_OF_MONTH, 1);
+		this.mDayOfWeekStart = this.mCalendar.get(Calendar.DAY_OF_WEEK);
+		if (monthParams.containsKey("week_start")) {
+			this.mWeekStart = ((Integer) monthParams.get("week_start")).intValue();
+		} else {
+			this.mWeekStart = this.mCalendar.getFirstDayOfWeek();
+		}
+		this.mNumCells = Utils.getDaysInMonth(this.mMonth, this.mYear);
+		for (int day = 0; day < this.mNumCells; day++) {
+			final int monthDay = day + 1;
+			if (sameDay(monthDay, today)) {
+				this.mHasToday = true;
+				this.mToday = monthDay;
+			}
+		}
+		this.mNumRows = calculateNumRows();
 
-        mMonth = params.get(VIEW_PARAMS_MONTH);
-        mYear = params.get(VIEW_PARAMS_YEAR);
-
-        final Time today = new Time(Time.getCurrentTimezone());
-        today.setToNow();
-        mHasToday = false;
-        mToday = -1;
-
-		mCalendar.set(Calendar.MONTH, mMonth);
-		mCalendar.set(Calendar.YEAR, mYear);
-		mCalendar.set(Calendar.DAY_OF_MONTH, 1);
-		mDayOfWeekStart = mCalendar.get(Calendar.DAY_OF_WEEK);
-
-        if (params.containsKey(VIEW_PARAMS_WEEK_START)) {
-            mWeekStart = params.get(VIEW_PARAMS_WEEK_START);
-        } else {
-            mWeekStart = mCalendar.getFirstDayOfWeek();
-        }
-
-        mNumCells = Utils.getDaysInMonth(mMonth, mYear);
-        for (int i = 0; i < mNumCells; i++) {
-            final int day = i + 1;
-            if (sameDay(day, today)) {
-                mHasToday = true;
-                mToday = day;
-            }
-        }
-
-        mNumRows = calculateNumRows();
 	}
 
 	public void setOnDayClickListener(OnDayClickListener onDayClickListener) {
